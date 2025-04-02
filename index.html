@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pronunciation Practice</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; text-align: center; }
+    #word { font-size: 24px; margin-bottom: 20px; }
+    .correct { color: green; font-weight: bold; }
+    .wrong { color: red; font-weight: bold; }
+    button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h2>Pronunciation Practice</h2>
+  <div id="word">Loading...</div>
+  <button onclick="startRecognition()">🎤 Start Speaking</button>
+  <p id="result"></p>
+  <p id="error" style="color: red;"></p>
+
+  <script>
+    const query = new URLSearchParams(window.location.search);
+    const expected = query.get("sentence") || "hello";
+
+    document.getElementById("word").textContent = expected;
+
+    function startRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        document.getElementById("error").textContent = "Speech Recognition not supported.";
+        return;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.lang = "en-US";
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.start();
+
+      recognition.onresult = (event) => {
+        const spoken = event.results[0][0].transcript.toLowerCase().trim();
+        const expectedWords = expected.toLowerCase().split(" ");
+        const spokenWords = spoken.split(" ");
+
+        let feedback = "";
+        expectedWords.forEach((word, index) => {
+          if (spokenWords[index] === word) {
+            feedback += `<span class='correct'>${word}</span> `;
+          } else {
+            feedback += `<span class='wrong'>${word}</span> `;
+          }
+        });
+
+        document.getElementById("result").innerHTML = feedback;
+        document.getElementById("error").textContent = "";
+      };
+
+      recognition.onerror = (event) => {
+        document.getElementById("error").textContent = "Error: " + event.error;
+      };
+    }
+  </script>
+</body>
+</html>
