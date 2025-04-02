@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Speech Practice</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .word { padding: 4px 8px; margin: 2px; display: inline-block; border-radius: 6px; color: white; }
+    .correct { background: lightgreen; color: black; }
+    .incorrect { background: lightcoral; color: white; }
+  </style>
+</head>
+<body>
+  <h1>Speech Practice</h1>
+  <p><strong>Sentence to say:</strong> <span id="target"></span></p>
+  <button onclick="startRecognition()">🎤 Start Speaking</button>
+  <p><strong>You said:</strong> <span id="spoken"></span></p>
+  <div id="feedback"></div>
+
+  <script>
+    const target = decodeURIComponent(new URLSearchParams(window.location.search).get("sentence") || "I like pizza");
+    document.getElementById("target").textContent = target;
+
+    function startRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) return alert("Speech Recognition not supported");
+
+      const recognition = new SpeechRecognition();
+      recognition.lang = "en-US";
+      recognition.onresult = (event) => {
+        const spoken = event.results[0][0].transcript;
+        document.getElementById("spoken").textContent = spoken;
+        showFeedback(spoken, target);
+      };
+      recognition.start();
+    }
+
+    function showFeedback(spoken, expected) {
+      const feedbackDiv = document.getElementById("feedback");
+      feedbackDiv.innerHTML = "";
+      const spokenWords = spoken.toLowerCase().split(/\s+/);
+      const expectedWords = expected.toLowerCase().split(/\s+/);
+
+      expectedWords.forEach((word, i) => {
+        const span = document.createElement("span");
+        span.textContent = word;
+        span.className = "word " + (spokenWords[i] === word ? "correct" : "incorrect");
+        feedbackDiv.appendChild(span);
+      });
+    }
+  </script>
+</body>
+</html>
