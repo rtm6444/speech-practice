@@ -4,18 +4,40 @@
   <meta charset="UTF-8" />
   <title>Speech Practice</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    .word { padding: 4px 8px; margin: 2px; display: inline-block; border-radius: 6px; color: white; }
-    .correct { background: lightgreen; color: black; }
-    .incorrect { background: lightcoral; color: white; }
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      text-align: center;
+    }
+    .word {
+      padding: 4px 8px;
+      margin: 2px;
+      display: inline-block;
+      border-radius: 6px;
+      color: white;
+    }
+    .correct {
+      background: lightgreen;
+      color: black;
+    }
+    .incorrect {
+      background: lightcoral;
+      color: white;
+    }
+    .error-message {
+      color: red;
+      margin-top: 10px;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
-  <h1>Speech Practice</h1>
-  <p><strong>Sentence to say:</strong> <span id="target"></span></p>
+  <h1>Pronunciation Practice</h1>
+  <h2 id="target"></h2>
   <button onclick="startRecognition()">🎤 Start Speaking</button>
   <p><strong>You said:</strong> <span id="spoken"></span></p>
   <div id="feedback"></div>
+  <div id="error" class="error-message"></div>
 
   <script>
     const target = decodeURIComponent(new URLSearchParams(window.location.search).get("sentence") || "I like pizza");
@@ -23,30 +45,46 @@
 
     function startRecognition() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) return alert("Speech Recognition not supported");
+      if (!SpeechRecognition) {
+        document.getElementById("error").textContent = "דפדפן זה לא תומך בזיהוי קולי.";
+        return;
+      }
 
       const recognition = new SpeechRecognition();
       recognition.lang = "en-US";
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        document.getElementById("error").textContent = "";
+      };
+
+      recognition.onerror = (event) => {
+        if (event.error === "not-allowed") {
+          document.getElementById("error").textContent = "יש לאפשר שימוש במיקרופון כדי להשתמש בתרגול.";
+        } else {
+          document.getElementById("error").textContent = "שגיאה: " + event.error;
+        }
+      };
+
       recognition.onresult = (event) => {
         const spoken = event.results[0][0].transcript;
         document.getElementById("spoken").textContent = spoken;
-        showFeedback(spoken, target);
+
+        const spokenWords = spoken.toLowerCase().split(/\s+/);
+        const expectedWords = target.toLowerCase().split(/\s+/);
+
+        let feedbackHTML = "";
+        for (let i = 0; i < expectedWords.length; i++) {
+          const word = expectedWords[i];
+          const match = spokenWords[i] === word;
+          feedbackHTML += `<span class="word ${match ? "correct" : "incorrect"}">${word}</span>`;
+        }
+
+        document.getElementById("feedback").innerHTML = feedbackHTML;
       };
+
       recognition.start();
-    }
-
-    function showFeedback(spoken, expected) {
-      const feedbackDiv = document.getElementById("feedback");
-      feedbackDiv.innerHTML = "";
-      const spokenWords = spoken.toLowerCase().split(/\s+/);
-      const expectedWords = expected.toLowerCase().split(/\s+/);
-
-      expectedWords.forEach((word, i) => {
-        const span = document.createElement("span");
-        span.textContent = word;
-        span.className = "word " + (spokenWords[i] === word ? "correct" : "incorrect");
-        feedbackDiv.appendChild(span);
-      });
     }
   </script>
 </body>
