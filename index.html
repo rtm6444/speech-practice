@@ -7,8 +7,10 @@
     body {
       font-family: sans-serif;
       padding: 20px;
+      background: #f8fafa;
       text-align: center;
     }
+
     .word {
       padding: 4px 8px;
       margin: 2px;
@@ -16,46 +18,74 @@
       border-radius: 6px;
       color: white;
     }
+
     .correct {
       background: lightgreen;
       color: black;
     }
-    .incorrect {
+
+    .wrong {
       background: lightcoral;
-      color: white;
     }
-    .error-message {
+
+    #error {
       color: red;
-      margin-top: 10px;
-      font-weight: bold;
+      margin-top: 12px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    #result {
+      margin-top: 20px;
+      font-size: 20px;
     }
   </style>
 </head>
 <body>
   <h1>Pronunciation Practice</h1>
-  <h2 id="target"></h2>
+  <div id="target" style="font-size: 24px;">I like pizza</div>
   <button onclick="startRecognition()">🎤 Start Speaking</button>
-  <p><strong>You said:</strong> <span id="spoken"></span></p>
-  <div id="feedback"></div>
-  <div id="error" class="error-message"></div>
+  <div id="result"></div>
+  <div id="error"></div>
 
   <script>
-    const target = decodeURIComponent(new URLSearchParams(window.location.search).get("sentence") || "I like pizza");
-    document.getElementById("target").textContent = target;
+    const expected = decodeURIComponent(new URLSearchParams(window.location.search).get("sentence")) || "I like pizza";
+    document.getElementById("target").textContent = expected;
+
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = "en-US";
 
     function startRecognition() {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        document.getElementById("error").textContent = "דפדפן זה לא תומך בזיהוי קולי.";
-        return;
-      }
-
-      const recognition = new SpeechRecognition();
-      recognition.lang = "en-US";
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
-
       recognition.onstart = () => {
+        recognition.start();
+      };
+
+      recognition.onresult = (event) => {
+        const spoken = event.results[0][0].transcript.toLowerCase().trim();
+        const expectedWords = expected.toLowerCase().split(" ");
+        const spokenWords = spoken.split(" ");
+
+        let feedback = "";
+        expectedWords.forEach((word, index) => {
+          if (spokenWords[index] === word) {
+            feedback += `<span class='word correct'>${word}</span> `;
+          } else {
+            feedback += `<span class='word wrong'>${word}</span> `;
+          }
+        });
+
+        document.getElementById("result").innerHTML = feedback;
         document.getElementById("error").textContent = "";
       };
 
@@ -65,23 +95,6 @@
         } else {
           document.getElementById("error").textContent = "שגיאה: " + event.error;
         }
-      };
-
-      recognition.onresult = (event) => {
-        const spoken = event.results[0][0].transcript;
-        document.getElementById("spoken").textContent = spoken;
-
-        const spokenWords = spoken.toLowerCase().split(/\s+/);
-        const expectedWords = target.toLowerCase().split(/\s+/);
-
-        let feedbackHTML = "";
-        for (let i = 0; i < expectedWords.length; i++) {
-          const word = expectedWords[i];
-          const match = spokenWords[i] === word;
-          feedbackHTML += `<span class="word ${match ? "correct" : "incorrect"}">${word}</span>`;
-        }
-
-        document.getElementById("feedback").innerHTML = feedbackHTML;
       };
 
       recognition.start();
