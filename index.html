@@ -2,90 +2,110 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Speech Practice</title>
+  <title>Anglit School | Pronunciation Practice</title>
   <style>
     body {
-      font-family: sans-serif;
-      padding: 20px;
-      background: #f8fafa;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4faff;
+      padding: 40px;
       text-align: center;
+      color: #1a1a1a;
     }
-
-    .word {
+    img.logo {
+      width: 140px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      font-size: 2.5em;
+      color: #004080;
+    }
+    .target-sentence {
+      font-size: 1.6em;
+      margin: 20px 0;
+    }
+    button {
+      padding: 12px 24px;
+      font-size: 1em;
+      background-color: #007acc;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background-color: #005fa3;
+    }
+    .correct {
+      color: white;
+      background-color: lightgreen;
       padding: 4px 8px;
       margin: 2px;
       display: inline-block;
       border-radius: 6px;
+    }
+    .incorrect {
       color: white;
-    }
-
-    .correct {
-      background: lightgreen;
-      color: black;
-    }
-
-    .wrong {
-      background: lightcoral;
-    }
-
-    #error {
-      color: red;
-      margin-top: 12px;
-    }
-
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      margin: 10px;
-      border: 1px solid #ccc;
+      background-color: lightcoral;
+      padding: 4px 8px;
+      margin: 2px;
+      display: inline-block;
       border-radius: 6px;
-      cursor: pointer;
     }
-
-    h1 {
-      margin-bottom: 20px;
-    }
-
-    #result {
+    #scoreDisplay {
       margin-top: 20px;
-      font-size: 20px;
+      font-size: 1.2em;
+      color: #004080;
+    }
+    #error {
+      margin-top: 15px;
+      color: red;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
+  <img src="https://rtm6444.github.io/speech-practice/logo.png" alt="Anglit School Logo" class="logo" />
   <h1>Pronunciation Practice</h1>
-  <div id="target" style="font-size: 24px;">I like pizza</div>
+  <div class="target-sentence" id="target"></div>
   <button onclick="startRecognition()">🎤 Start Speaking</button>
+  <div id="spoken"></div>
   <div id="result"></div>
+  <div id="scoreDisplay"></div>
   <div id="error"></div>
 
   <script>
-    const expected = decodeURIComponent(new URLSearchParams(window.location.search).get("sentence")) || "I like pizza";
-    document.getElementById("target").textContent = expected;
-
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = "en-US";
+    const target = decodeURIComponent(new URLSearchParams(window.location.search).get("sentence")) || "I like pizza";
+    document.getElementById("target").textContent = target;
 
     function startRecognition() {
-      recognition.onstart = () => {
-        recognition.start();
-      };
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = "en-US";
+
+      recognition.start();
 
       recognition.onresult = (event) => {
         const spoken = event.results[0][0].transcript.toLowerCase().trim();
-        const expectedWords = expected.toLowerCase().split(" ");
+        const expectedWords = target.toLowerCase().split(" ");
         const spokenWords = spoken.split(" ");
 
-        let feedback = "";
+        document.getElementById("spoken").innerHTML = `<p><strong>You said:</strong> ${spoken}</p>`;
+
+        let correct = 0;
+        let result = "";
+
         expectedWords.forEach((word, index) => {
           if (spokenWords[index] === word) {
-            feedback += `<span class='word correct'>${word}</span> `;
+            result += `<span class='correct'>${word}</span>`;
+            correct++;
           } else {
-            feedback += `<span class='word wrong'>${word}</span> `;
+            result += `<span class='incorrect'>${word}</span>`;
           }
         });
 
-        document.getElementById("result").innerHTML = feedback;
+        const score = Math.round((correct / expectedWords.length) * 100);
+        document.getElementById("result").innerHTML = result;
+        document.getElementById("scoreDisplay").innerHTML = `✅ Success: ${correct}/${expectedWords.length} (${score}%)`;
         document.getElementById("error").textContent = "";
       };
 
@@ -96,8 +116,6 @@
           document.getElementById("error").textContent = "שגיאה: " + event.error;
         }
       };
-
-      recognition.start();
     }
   </script>
 </body>
